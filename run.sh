@@ -3,30 +3,35 @@
 # Немедленно выходить, если команда завершается с ошибкой.
 set -e
 
-# --- НОВОЕ: Автоопределение команды docker-compose ---
-# Проверяем, доступна ли новая команда 'docker compose'
+# --- ИСПРАВЛЕНИЕ 1: Определяем публичный IP хоста ---
+echo "Определяем публичный IP-адрес сервера..."
+PUBLIC_IP=$(curl -s icanhazip.com)
+if [ -z "$PUBLIC_IP" ]; then
+  echo "Ошибка: не удалось определить публичный IP-адрес."
+  exit 1
+fi
+echo "Сервер имеет IP: $PUBLIC_IP"
+# Экспортируем его для .env файла
+export PUBLIC_IP
+
+# Автоопределение команды docker-compose
 if docker compose version &>/dev/null; then
   DC_CMD="docker compose"
-# Если нет, проверяем старую 'docker-compose'
 elif docker-compose --version &>/dev/null; then
   DC_CMD="docker-compose"
 else
   echo "Ошибка: Не удалось найти ни 'docker compose', ни 'docker-compose'."
-  echo "Пожалуйста, убедитесь, что Docker и Docker Compose установлены правильно."
   exit 1
 fi
 echo "Используется команда: '$DC_CMD'"
-# --- КОНЕЦ НОВОГО БЛОКА ---
 
-
-# По умолчанию используется стандартный скрипт
+# --- ИСПРАВЛЕНИЕ 2: Корректная обработка аргументов ---
 SCRIPT_NAME="autoXRAY.sh"
-# Все переданные аргументы по умолчанию идут в SCRIPT_ARGS
-SCRIPT_ARGS="$@"
+SCRIPT_ARGS_RAW="$@"
 
-# Анализируем первый аргумент, чтобы выбрать нужный скрипт установки
 case "$1" in
   selfsteal|selfsteal-ru|selfsteal-china|no443|bridge-ru)
+    # ... (логика выбора скрипта остается прежней)
     case "$1" in
       selfsteal)       SCRIPT_NAME="autoXRAYselfsteal.sh" ;;
       selfsteal-ru)    SCRIPT_NAME="autoXRAYselfstealConfRU.sh" ;;
@@ -34,31 +39,35 @@ case "$1" in
       no443)           SCRIPT_NAME="autoXRAYno443.sh" ;;
       bridge-ru)       SCRIPT_NAME="autoXRAYselfstealConfRUbrEU.sh" ;;
     esac
-    shift
-    SCRIPT_ARGS="$@"
+    shift # убираем ключевое слово
+    # Если следующий аргумент это --, убираем и его
+    if [ "$1" == "--" ]; then
+      shift
+    fi
+    SCRIPT_ARGS_RAW="$@"
     ;;
 esac
+
+export SCRIPT_NAME
+export SCRIPT_ARGS="$SCRIPT_ARGS_RAW"
 
 echo "Создаем файл конфигурации .env..."
 {
   echo "SCRIPT_NAME=${SCRIPT_NAME}"
   echo "SCRIPT_ARGS=${SCRIPT_ARGS}"
+  echo "PUBLIC_IP=${PUBLIC_IP}" # Добавляем IP в .env
 } > .env
 
 echo "Выбран скрипт: $SCRIPT_NAME"
 echo "Аргументы: $SCRIPT_ARGS"
 echo "Запускаем контейнер..."
 
-# Используем определенную ранее команду $DC_CMD
 $DC_CMD up --build -d
 
-# Путь к файлу с выводом внутри контейнера
 OUTPUT_FILE="/usr/local/etc/xray/run_output.log"
-
 echo "Ожидаем результат выполнения команды..."
 
 for i in {1..30}; do
-  # Используем определенную ранее команду $DC_CMD
   output=$($DC_CMD exec -T autoxray cat "$OUTPUT_FILE" 2>/dev/null)
   if [ $? -eq 0 ] && [ -n "$output" ]; then
     echo "--------------------------------------------------"

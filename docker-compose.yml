@@ -8,6 +8,7 @@ services:
     environment:
       - SCRIPT_NAME=${SCRIPT_NAME}
       - SCRIPT_ARGS=${SCRIPT_ARGS}
+      - PUBLIC_IP=${PUBLIC_IP} # Новая переменная
 
 volumes:
   xray_config:
