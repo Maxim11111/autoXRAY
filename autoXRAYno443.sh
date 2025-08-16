@@ -100,4 +100,15 @@ echo -e "\n\nВаши VPN конфиги. Первый - самый надежн
 echo -e "\033[32m$link1\033[0m\n"
 echo -e "\033[32m$link2\033[0m\n"
 echo -e "\033[32m$link3\033[0m\n"
-echo -e "Скопируйте конфиг в специализированное приложение.\n"
+echo -e "Скопируйте конфиг в специализированное приложение:
+- iOS: Happ или v2rayTun или FoXray
+- Android: Happ или v2rayTun или v2rayNG
+- Windows: Happ & winLoadXRAY & Hiddify & Nekoray
+
+Сайт с инструкциями: blog.skybridge.run
+
+Поддержать автора: https://github.com/xVRVx/autoXRAY
+
+"
+
+
