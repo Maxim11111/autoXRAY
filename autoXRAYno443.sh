@@ -12,14 +12,19 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 
-# --- Раздел 1: Настройка портов ---
-# ИСПРАВЛЕНО: Корректно обрабатываем необязательный разделитель "--"
-if [ "$1" == "--" ]; then
-  shift
+# --- Раздел 1: Настройка портов (НОВАЯ, НАДЕЖНАЯ ВЕРСИЯ) ---
+# Помещаем все аргументы в массив для гибкой обработки
+ARGS=("$@")
+ARG_INDEX=0
+
+# Если первый аргумент это "--", мы его пропускаем, начиная со следующего
+if [[ "${ARGS[0]}" == "--" ]]; then
+  ARG_INDEX=1
 fi
-port1=${1:-4443}
-port2=${2:-8443}
-port3=${3:-2040}
+
+port1=${ARGS[$ARG_INDEX]:-4443}
+port2=${ARGS[$((ARG_INDEX+1))]:-8443}
+port3=${ARGS[$((ARG_INDEX+2))]:-2040}
 
 echo "Будут использованы порты:"
 echo "VLESS 1: $port1"
@@ -33,11 +38,11 @@ echo "Обновление и установка необходимых паке
 # sudo не нужен, так как мы уже под root
 apt update && apt install -y curl jq
 
-echo "Установка последней версии ядра Xray (вывод будет показан для отладки)..."
-# ИСПРАВЛЕНО: Убран > /dev/null, чтобы видеть ошибки установки
+echo "Установка последней версии ядра Xray..."
+# Запускаем установщик. Теперь у него точно будут права на установку.
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
 
-# ИСПРАВЛЕНО: Гарантируем, что директория для конфига существует
+# Гарантируем, что директория для конфига существует
 mkdir -p /usr/local/etc/xray
 
 
@@ -60,7 +65,7 @@ ipserv=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
 echo "Создание файла конфигурации /usr/local/etc/xray/config.json..."
 export xray_uuid_vrv xray_dest_vrv xray_dest_vrv222 xray_privateKey_vrv xray_publicKey_vrv xray_shortIds_vrv xray_sspasw_vrv port1 port2 port3
 
-# Шаблон конфигурации (без изменений)
+# Шаблон конфигурации
 cat << EOF | envsubst > /usr/local/etc/xray/config.json
 {
     "dns": { "servers": [ "https+local://8.8.4.4/dns-query", "https+local://8.8.8.8/dns-query", "https+local://1.1.1.1/dns-query", "localhost" ] },
