@@ -22,15 +22,21 @@ case "$1" in
     ;;
 esac
 
-# Экспортируем переменные, чтобы docker-compose мог их использовать
-export SCRIPT_NAME
-export SCRIPT_ARGS
+# --- ИСПРАВЛЕНИЕ ---
+# Создаем .env файл, который будет автоматически прочитан docker-compose.
+# Это делает конфигурацию постоянной для всех команд docker-compose.
+echo "Создаем файл конфигурации .env..."
+{
+  echo "SCRIPT_NAME=${SCRIPT_NAME}"
+  echo "SCRIPT_ARGS=${SCRIPT_ARGS}"
+} > .env
 
 echo "Выбран скрипт: $SCRIPT_NAME"
 echo "Аргументы: $SCRIPT_ARGS"
 echo "Запускаем контейнер..."
 
 # Запускаем сборку и старт контейнера в фоновом режиме
+# Теперь docker-compose сам прочитает переменные из .env
 docker-compose up --build -d
 
 # Путь к файлу с выводом внутри контейнера
