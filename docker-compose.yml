@@ -1,0 +1,13 @@
+services:
+  autoxray:
+    build: .
+    container_name: autoxray
+    restart: unless-stopped
+    volumes:
+      - xray_config:/usr/local/etc/xray
+    environment:
+      - SCRIPT_NAME=${SCRIPT_NAME}
+      - SCRIPT_ARGS=${SCRIPT_ARGS}
+
+volumes:
+  xray_config:
